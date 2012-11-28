@@ -14,7 +14,7 @@ nv.models.scatterChart = function() {
     , distY        = nv.models.distribution()
     ;
 
-  var margin       = {top: 30, right: 20, bottom: 50, left: 60}
+  var margin       = {top: 30, right: 20, bottom: 50, left: 75}
     , width        = null
     , height       = null
     , color        = nv.utils.defaultColor()
@@ -157,8 +157,6 @@ nv.models.scatterChart = function() {
       gEnter.append('g').attr('class', 'nv-legendWrap');
       gEnter.append('g').attr('class', 'nv-controlsWrap');
 
-      wrap.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
-
       //------------------------------------------------------------
 
 
@@ -199,6 +197,9 @@ nv.models.scatterChart = function() {
       //------------------------------------------------------------
 
 
+      wrap.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+
       //------------------------------------------------------------
       // Main Chart Component(s)
 
@@ -233,7 +234,7 @@ nv.models.scatterChart = function() {
 
       xAxis
           .scale(x)
-          .ticks( xAxis.ticks() ? xAxis.ticks() : availableWidth / 100 )
+          .ticks( xAxis.ticks() && xAxis.ticks().length ? xAxis.ticks() : availableWidth / 100 )
           .tickSize( -availableHeight , 0);
 
       g.select('.nv-x.nv-axis')
@@ -243,7 +244,7 @@ nv.models.scatterChart = function() {
 
       yAxis
           .scale(y)
-          .ticks( yAxis.ticks() ? yAxis.ticks() : availableHeight / 36 )
+          .ticks( yAxis.ticks() && yAxis.ticks().length ? yAxis.ticks() : availableHeight / 36 )
           .tickSize( -availableWidth, 0);
 
       g.select('.nv-y.nv-axis')

@@ -15,7 +15,7 @@ nv.models.scatter = function() {
     , z           = d3.scale.linear() //linear because d3.svg.shape.size is treated as area
     , getX        = function(d) { return d.x } // accessor to get the x value
     , getY        = function(d) { return d.y } // accessor to get the y value
-    , getSize     = function(d) { return d.size } // accessor to get the point size
+    , getSize     = function(d) { return d.size || 1} // accessor to get the point size
     , getShape    = function(d) { return d.shape || 'circle' } // accessor to get point shape
     , forceX      = [] // List of numbers to Force into the X scale (ie. 0, or a max / min, etc.)
     , forceY      = [] // List of numbers to Force into the Y scale
@@ -43,6 +43,7 @@ nv.models.scatter = function() {
 
   var x0, y0, z0 // used to store previous scales
     , timeoutID
+    , needsUpdate = false // Flag for when the points are visually updating, but the interactive layer is behind, to disable tooltips
     ;
 
   //============================================================
@@ -154,7 +155,16 @@ nv.models.scatter = function() {
 
 
         if (clipVoronoi) {
-          defsEnter.append('clipPath').attr('id', 'nv-points-clip-' + id);
+
+
+          var pointClipsEnter = wrap.select('defs').selectAll('.nv-point-clips')
+              .data([id])
+            .enter();
+
+
+          pointClipsEnter.append('clipPath')
+                .attr('class', 'nv-point-clips')
+                .attr('id', 'nv-points-clip-' + id);
 
           var pointClips = wrap.select('#nv-points-clip-' + id).selectAll('circle')
               .data(vertices);
@@ -172,6 +182,11 @@ nv.models.scatter = function() {
 
         //inject series and point index for reference into voronoi
         if (useVoronoi === true) {
+          if(vertices.length < 3) {
+            // Issue #283 - Adding 2 dummy points to the voronoi b/c voronoi requires min 3 points to work
+            vertices.push([x.range()[0] - 20, y.range()[0] - 20, null, null]);
+            vertices.push([x.range()[1] + 20, y.range()[1] + 20, null, null]);
+          }
           var voronoi = d3.geom.voronoi(vertices).map(function(d, i) {
               return {
                 'data': d,
@@ -210,6 +225,7 @@ nv.models.scatter = function() {
 
         eventElements
             .on('click', function(d) {
+              if (needsUpdate) return 0;
               var series = data[d.series],
                   point  = series.values[d.point];
 
@@ -222,6 +238,7 @@ nv.models.scatter = function() {
               });
             })
             .on('mouseover', function(d) {
+              if (needsUpdate) return 0;
               var series = data[d.series],
                   point  = series.values[d.point];
 
@@ -234,6 +251,7 @@ nv.models.scatter = function() {
               });
             })
             .on('mouseout', function(d, i) {
+              if (needsUpdate) return 0;
               var series = data[d.series],
                   point  = series.values[d.point];
 
@@ -245,9 +263,10 @@ nv.models.scatter = function() {
               });
             });
 
+        needsUpdate = false;
       }
 
-
+      needsUpdate = true;
 
       var groups = wrap.select('.nv-groups').selectAll('.nv-group')
           .data(function(d) { return d }, function(d) { return d.key });

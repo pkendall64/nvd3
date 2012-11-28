@@ -37,7 +37,7 @@ nv.models.linePlusBarChart = function() {
     ;
   xAxis
     .orient('bottom')
-    .tickPadding(5)
+    .tickPadding(7)
     ;
   y1Axis
     .orient('left')
@@ -108,45 +108,14 @@ nv.models.linePlusBarChart = function() {
       //------------------------------------------------------------
       // Setup Scales
 
-      x = xAxis.scale();
-      y1 = bars.yScale();
-      y2 = lines.yScale();
-
       var dataBars = data.filter(function(d) { return !d.disabled && d.bar });
       var dataLines = data.filter(function(d) { return !d.bar }); // removed the !d.disabled clause here to fix Issue #240
 
+      //x = xAxis.scale();
+      x = dataLines.filter(function(d) { return !d.disabled; }).length ? lines.xScale() : bars.xScale();
+      y1 = bars.yScale();
+      y2 = lines.yScale();
 
-      //TODO: try to remove x scale computation from this layer
-
-      var series1 = data.filter(function(d) { return !d.disabled && d.bar })
-            .map(function(d) {
-              return d.values.map(function(d,i) {
-                return { x: getX(d,i), y: getY(d,i) }
-              })
-            });
-
-      var series2 = data.filter(function(d) { return !d.disabled && !d.bar })
-            .map(function(d) {
-              return d.values.map(function(d,i) {
-                return { x: getX(d,i), y: getY(d,i) }
-              })
-            });
-
-      x   .domain(d3.extent(d3.merge(series1.concat(series2)), function(d) { return d.x } ))
-          .range([0, availableWidth]);
-
-
-
-          /*
-      x   .domain(d3.extent(d3.merge(data.map(function(d) { return d.values })), getX ))
-          .range([0, availableWidth]);
-
-      y1  .domain(d3.extent(d3.merge(dataBars), function(d) { return d.y } ))
-          .range([availableHeight, 0]);
-
-      y2  .domain(d3.extent(d3.merge(dataLines), function(d) { return d.y } ))
-          .range([availableHeight, 0]);
-         */
 
       //------------------------------------------------------------
 
@@ -235,6 +204,7 @@ nv.models.linePlusBarChart = function() {
       // Setup Axes
 
       xAxis
+        .scale(x)
         .ticks( availableWidth / 100 )
         .tickSize(-availableHeight, 0);
 

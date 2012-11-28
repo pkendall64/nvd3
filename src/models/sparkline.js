@@ -68,21 +68,30 @@ nv.models.sparkline = function() {
       // TODO: Add CURRENT data point (Need Min, Mac, Current / Most recent)
       var points = wrap.selectAll('circle.nv-point')
           .data(function(data) {
-            return data.map(function(d,i) {
-              if (y.domain().indexOf(getY(d,i)) != -1 || getX(d,i) == x.domain()[1]) d.pointIndex = i;
-              return d;
-            })
-            .filter(function(d) { return typeof d.pointIndex != 'undefined' })
+              var yValues = data.map(function(d, i) { return getY(d,i); });
+              function pointIndex(index) {
+                  if (index != -1) {
+	              var result = data[index];
+                      result.pointIndex = index;
+                      return result;
+                  } else {
+                      return null;
+                  }
+              }
+              var maxPoint = pointIndex(yValues.lastIndexOf(y.domain()[1])),
+                  minPoint = pointIndex(yValues.indexOf(y.domain()[0])),
+                  currentPoint = pointIndex(yValues.length - 1);
+              return [minPoint, maxPoint, currentPoint].filter(function (d) {return d != null;});
           });
-      points.enter().append('circle').attr('class', 'nv-point');
+      points.enter().append('circle');
       points.exit().remove();
       points
           .attr('cx', function(d,i) { return x(getX(d,d.pointIndex)) })
           .attr('cy', function(d,i) { return y(getY(d,d.pointIndex)) })
           .attr('r', 2)
           .attr('class', function(d,i) {
-            return getX(d, d.pointIndex) == x.domain()[1] ? 'nv-currentValue' :
-                   getY(d, d.pointIndex) == y.domain()[0] ? 'nv-minValue' : 'nv-maxValue'
+            return getX(d, d.pointIndex) == x.domain()[1] ? 'nv-point nv-currentValue' :
+                   getY(d, d.pointIndex) == y.domain()[0] ? 'nv-point nv-minValue' : 'nv-point nv-maxValue'
           });
     });
 

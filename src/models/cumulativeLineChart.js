@@ -33,7 +33,7 @@ nv.models.cumulativeLineChart = function() {
 
   xAxis
     .orient('bottom')
-    .tickPadding(5)
+    .tickPadding(7)
     ;
   yAxis
     .orient('left')
@@ -60,13 +60,17 @@ nv.models.cumulativeLineChart = function() {
     nv.tooltip.show([left, top], content, null, null, offsetElement);
   };
 
-
+/*
+  //Moved to see if we can get better behavior to fix issue #315
   var indexDrag = d3.behavior.drag()
                     .on('dragstart', dragStart)
                     .on('drag', dragMove)
                     .on('dragend', dragEnd);
 
-  function dragStart(d,i) {}
+  function dragStart(d,i) {
+    d3.select(chart.container)
+        .style('cursor', 'ew-resize');
+  }
 
   function dragMove(d,i) {
     d.x += d3.event.dx;
@@ -77,8 +81,11 @@ nv.models.cumulativeLineChart = function() {
   }
 
   function dragEnd(d,i) {
+    d3.select(chart.container)
+        .style('cursor', 'auto');
     chart.update();
   }
+*/
 
   //============================================================
 
@@ -96,6 +103,32 @@ nv.models.cumulativeLineChart = function() {
 
       chart.update = function() { chart(selection) };
       chart.container = this;
+
+
+
+      var indexDrag = d3.behavior.drag()
+                        .on('dragstart', dragStart)
+                        .on('drag', dragMove)
+                        .on('dragend', dragEnd);
+
+
+      function dragStart(d,i) {
+        d3.select(chart.container)
+            .style('cursor', 'ew-resize');
+      }
+
+      function dragMove(d,i) {
+        index.x = d3.event.x;
+        index.i = Math.round(dx.invert(index.x));
+        updateZero();
+      }
+
+      function dragEnd(d,i) {
+        d3.select(chart.container)
+            .style('cursor', 'auto');
+      }
+
+
 
 
       //------------------------------------------------------------
@@ -134,6 +167,9 @@ nv.models.cumulativeLineChart = function() {
           .filter(function(series) { return !series.disabled })
           .map(function(series,i) {
             var initialDomain = d3.extent(series.values, lines.y());
+
+            //account for series being disabled when losing 95% or more
+            if (initialDomain[0] < -.95) initialDomain[0] = -.95;
 
             return [
               (initialDomain[0] - initialDomain[1]) / (1 + initialDomain[1]),
@@ -223,11 +259,27 @@ nv.models.cumulativeLineChart = function() {
       wrap.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
 
+      // Show error if series goes below 100%
+      var tempDisabled = data.filter(function(d) { return d.tempDisabled });
+
+      wrap.select('.tempDisabled').remove(); //clean-up and prevent duplicates
+      if (tempDisabled.length) {
+        wrap.append('text').attr('class', 'tempDisabled')
+            .attr('x', availableWidth / 2)
+            .attr('y', '-.71em')
+            .style('text-anchor', 'end')
+            .text(tempDisabled.map(function(d) { return d.key }).join(', ') + ' values cannot be calculated for this time period.');
+      }
+
+
+
       //------------------------------------------------------------
       // Main Chart Component(s)
 
       gEnter.select('.nv-background')
-        .append('rect')
+        .append('rect');
+
+      g.select('.nv-background rect')
           .attr('width', availableWidth)
           .attr('height', availableHeight);
 
@@ -238,12 +290,12 @@ nv.models.cumulativeLineChart = function() {
         .height(availableHeight)
         .color(data.map(function(d,i) {
           return d.color || color(d, i);
-        }).filter(function(d,i) { return !data[i].disabled }));
+        }).filter(function(d,i) { return !data[i].disabled && !data[i].tempDisabled }));
 
 
 
       var linesWrap = g.select('.nv-linesWrap')
-          .datum(data.filter(function(d) { return !d.disabled }))
+          .datum(data.filter(function(d) { return !d.disabled && !d.tempDisabled }));
 
       //d3.transition(linesWrap).call(lines);
       linesWrap.call(lines);
@@ -270,7 +322,8 @@ nv.models.cumulativeLineChart = function() {
 
       xAxis
         .scale(x)
-        .ticks( availableWidth / 100 )
+        //Suggest how many ticks based on the chart width and D3 should listen (70 is the optimal number for MM/DD/YY dates)
+        .ticks( Math.min(data[0].values.length,availableWidth/70) )
         .tickSize(-availableHeight, 0);
 
       g.select('.nv-x.nv-axis')
@@ -467,16 +520,20 @@ nv.models.cumulativeLineChart = function() {
     return data.map(function(line, i) {
       var v = lines.y()(line.values[idx], idx);
 
+      //TODO: implement check below, and disable series if series loses 100% or more cause divide by 0 issue
+      if (v < -.95) {
+        //if a series loses more than 100%, calculations fail.. anything close can cause major distortion (but is mathematically currect till it hits 100)
+        line.tempDisabled = true;
+        return line;
+      }
+
+      line.tempDisabled = false;
+
       line.values = line.values.map(function(point, pointIndex) {
         point.display = {'y': (lines.y()(point, pointIndex) - v) / (1 + v) };
         return point;
       })
-      /*
-      TODO: implement check below, and disable series if series loses 100% or more cause divide by 0 issue
-      if (v < -.9) {
-        //if a series loses more than 100%, calculations fail.. anything close can cause major distortion (but is mathematically currect till it hits 100)
-      }
-      */
+
       return line;
     })
   }

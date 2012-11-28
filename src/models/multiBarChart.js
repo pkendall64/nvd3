@@ -36,7 +36,7 @@ nv.models.multiBarChart = function() {
     ;
   xAxis
     .orient('bottom')
-    .tickPadding(5)
+    .tickPadding(7)
     .highlightZero(false)
     .showMaxMin(false)
     .tickFormat(function(d) { return d })
@@ -225,6 +225,9 @@ nv.models.multiBarChart = function() {
             .selectAll('text')
             .attr('transform', function(d,i,j) { return 'rotate('+rotateLabels+' 0,0)' })
             .attr('text-transform', rotateLabels > 0 ? 'start' : 'end');
+
+      g.select('.nv-x.nv-axis').selectAll('g.nv-axisMaxMin text')
+          .style('opacity', 1);
 
       yAxis
         .scale(y)

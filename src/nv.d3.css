@@ -93,7 +93,7 @@ svg {
 
 
 svg text {
-  font: normal 12px sans-serif;
+  font: normal 12px Arial;
 }
 
 svg .title {
@@ -198,12 +198,10 @@ svg .title {
 
 .nvd3 .nv-bars .negative rect {
     zfill: brown;
-    cursor: pointer;
 }
 
 .nvd3 .nv-bars rect {
   zfill: steelblue;
-  cursor: pointer;
   fill-opacity: .75;
 
   transition: fill-opacity 250ms linear;
@@ -225,10 +223,6 @@ svg .title {
 
 .nvd3 .nv-bars .hover text {
   fill: rgba(0,0,0,1);
-}
-
-.nvd3 .nv-x.nv-axis text {
-  transform: rotate(90);
 }
 
 
@@ -351,8 +345,8 @@ svg .title {
 }
 
 .nvd3.nv-scatter.nv-single-point .nv-groups .nv-point {
-  fill-opacity: .5;
-  stroke-opacity: .5;
+  fill-opacity: .5 !important;
+  stroke-opacity: .5 !important;
 }
 
 
@@ -486,7 +480,7 @@ svg .title {
 *  Bullet
 */
 
-.nvd3.nv-bullet { font: 10px sans-serif; cursor: pointer; }
+.nvd3.nv-bullet { font: 10px sans-serif; }
 .nvd3.nv-bullet rect { fill-opacity: .6; }
 .nvd3.nv-bullet rect:hover { fill-opacity: 1; }
 .nvd3.nv-bullet .nv-marker { stroke: #000; stroke-width: 2px; }
@@ -495,8 +489,6 @@ svg .title {
 .nvd3.nv-bullet .nv-range.nv-s0 { fill: #eee; }
 .nvd3.nv-bullet .nv-range.nv-s1 { fill: #ddd; }
 .nvd3.nv-bullet .nv-range.nv-s2 { fill: #ccc; }
-.nvd3.nv-bullet .nv-measure.nv-s0 { fill: steelblue; }
-.nvd3.nv-bullet .nv-measure.nv-s1 { fill: darkblue; }
 .nvd3.nv-bullet .nv-title { font-size: 14px; font-weight: bold; }
 .nvd3.nv-bullet .nv-subtitle { fill: #999; }
 
@@ -516,7 +508,7 @@ svg .title {
 }
 
 .nvd3.nv-sparklineplus .nv-hoverValue line {
-  stroke: #f44;
+  stroke: #333;
   stroke-width: 1.5px;
  }
 
@@ -536,7 +528,7 @@ svg .title {
   stroke: #666;
   */
   stroke-width: 0;
-  font-size: .8em;
+  font-size: .9em;
   font-weight: normal;
 }
 
@@ -555,8 +547,12 @@ svg .title {
 }
 
 .nvd3.nv-sparklineplus .nv-currentValue {
+  /*
   stroke: #444;
-  fill: #444;
+  fill: #000;
+  */
+  font-weight: bold;
+  font-size: 1.1em;
 }
 
 /**********
