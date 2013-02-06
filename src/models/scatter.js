@@ -9,7 +9,7 @@ nv.models.scatter = function() {
     , width       = 960
     , height      = 500
     , color       = nv.utils.defaultColor() // chooses color
-    , id          = Math.floor(Math.random() * 100000) //Create semi-unique ID incase user doesn't selet one
+    , id          = Math.floor(Math.random() * 100000) //Create semi-unique ID incase user doesn't select one
     , x           = d3.scale.linear()
     , y           = d3.scale.linear()
     , z           = d3.scale.linear() //linear because d3.svg.shape.size is treated as area
@@ -21,8 +21,9 @@ nv.models.scatter = function() {
     , forceX      = [] // List of numbers to Force into the X scale (ie. 0, or a max / min, etc.)
     , forceY      = [] // List of numbers to Force into the Y scale
     , forceSize   = [] // List of numbers to Force into the Size scale
-    , interactive = true // If true, plots a voronoi overlay for advanced point interection
+    , interactive = true // If true, plots a voronoi overlay for advanced point intersection
     , pointActive = function(d) { return !d.notActive } // any points that return false will be filtered out
+    , padData     = false // If true, adds half a data points width to front and back, for lining up a line chart with a bar chart
     , clipEdge    = false // if true, masks points within x and y scale
     , clipVoronoi = true // if true, masks each point with a circle... can turn off to slightly increase performance
     , clipRadius  = function() { return 25 } // function to get the radius for voronoi point clips
@@ -79,7 +80,11 @@ nv.models.scatter = function() {
             );
 
       x   .domain(xDomain || d3.extent(seriesData.map(function(d) { return d.x }).concat(forceX)))
-          .range([0, availableWidth]);
+
+      if (padData)
+        x.range([availableWidth * .5 / data[0].values.length, availableWidth * (data[0].values.length - .5)  / data[0].values.length ]);
+      else
+        x.range([0, availableWidth]);
 
       y   .domain(yDomain || d3.extent(seriesData.map(function(d) { return d.y }).concat(forceY)))
           .range([availableHeight, 0]);
@@ -182,20 +187,29 @@ nv.models.scatter = function() {
           }
 
 
-          if(vertices.length < 3) {
+          // if(vertices.length < 3) {
             // Issue #283 - Adding 2 dummy points to the voronoi b/c voronoi requires min 3 points to work
-            vertices.push([x.range()[0] - 2000, y.range()[0] - 2000, null, null]);
-            vertices.push([x.range()[1] + 2000, y.range()[1] + 2000, null, null]);
-            vertices.push([x.range()[0] - 2000, y.range()[0] + 2000, null, null]);
-            vertices.push([x.range()[1] + 2000, y.range()[1] - 2000, null, null]);
-          }
+            vertices.push([x.range()[0] - 20, y.range()[0] - 20, null, null]);
+            vertices.push([x.range()[1] + 20, y.range()[1] + 20, null, null]);
+            vertices.push([x.range()[0] - 20, y.range()[0] + 20, null, null]);
+            vertices.push([x.range()[1] + 20, y.range()[1] - 20, null, null]);
+          // }
+
+          var bounds = d3.geom.polygon([
+              [-10,-10],
+              [-10,height + 10],
+              [width + 10,height + 10],
+              [width + 10,-10]
+          ]);
+
           var voronoi = d3.geom.voronoi(vertices).map(function(d, i) {
               return {
-                'data': d,
+                'data': bounds.clip(d),
                 'series': vertices[i][2],
                 'point': vertices[i][3]
               }
             });
+
 
 
           var pointPaths = wrap.select('.nv-point-paths').selectAll('path')
@@ -382,9 +396,9 @@ nv.models.scatter = function() {
 
 
       // Delay updating the invisible interactive layer for smoother animation
-      //clearTimeout(timeoutID); // stop repeat calls to updateInteractiveLayer
-      //timeoutID = setTimeout(updateInteractiveLayer, 1000);
-      updateInteractiveLayer();
+      clearTimeout(timeoutID); // stop repeat calls to updateInteractiveLayer
+      timeoutID = setTimeout(updateInteractiveLayer, 300);
+      //updateInteractiveLayer();
 
       //store old scales for use in transitions on update
       x0 = x.copy();
@@ -530,6 +544,12 @@ nv.models.scatter = function() {
   chart.pointActive = function(_) {
     if (!arguments.length) return pointActive;
     pointActive = _;
+    return chart;
+  };
+
+  chart.padData = function(_) {
+    if (!arguments.length) return padData;
+    padData = _;
     return chart;
   };
 
